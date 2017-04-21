@@ -3,6 +3,7 @@ require 'dotenv'
 require 'twitter'
 require 'httparty'
 require 'json'
+require 'mysql2'
 
 Dotenv.load
 
@@ -34,7 +35,6 @@ end
 
 def generate_poem quotes
   length = 0
-
   parts = []
 
   while length < 1 || length > 140 do
@@ -44,7 +44,7 @@ def generate_poem quotes
       parts << quotes.sample
     end
 
-    length = parts.map { |e| e.length  }.reduce(:+)
+    length = parts.map { |e| e.length  }.reduce(:+) + 2
   end
 
   parts
@@ -62,7 +62,7 @@ def quote_to_twitter quote_parts
       config.access_token_secret = ENV["ACCESS_SECRET"]
     end
 
-    #client.update made_quote
+    client.update made_quote
 
     @logger.info "Tweeted!"
   rescue Exception => e
@@ -75,6 +75,12 @@ def sync_to_osber quote_parts
   @logger.info "Syncing to Osber!"
 
   begin
+    client = Mysql2::Client.new(:host => ENV["OSBER_DB_HOST"], :username => ENV["OSBER_DB_USER"], :password => ENV["OSBER_DB_PASS"], :database => ENV["OSBER_DB_DATABASE"])
+
+    safe_quote = client.escape made_quote
+    client.query("UPDATE site_vars SET value = '#{safe_quote}' WHERE channel = 'starrlett20' AND var = 'starrpoem'")
+
+    client.close
 
     @logger.info "Synced!"
   rescue Exception => e

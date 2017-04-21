@@ -35,7 +35,7 @@ parts = []
   parts << filtered.sample
 end
 
-made_quote = parts.join(" ")
+made_quote = parts.join("\n")
 
 logger.info "Made: #{made_quote}"
 
